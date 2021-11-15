@@ -15,10 +15,11 @@
 #define SHIM_ENTRY_API_H_
 
 /* Offsets for GS register at which entry vectors can be found */
-#define SHIM_SYSCALLDB_OFFSET         24
-#define SHIM_CALL_OFFSET              32
+#define SHIM_SYSCALLDB_OFFSET 24
+#define SHIM_CALL_OFFSET      32
 
 #ifdef __ASSEMBLER__
+/* clang-format off */
 
 .macro SYSCALLDB
 leaq .Lafter_syscalldb\@(%rip), %rcx
@@ -26,11 +27,13 @@ jmpq *%gs:SHIM_SYSCALLDB_OFFSET
 .Lafter_syscalldb\@:
 .endm
 
+/* clang-format on */
 #else /* !__ASSEMBLER__ */
 
-#define SHIM_STR(x) #x
+#define SHIM_STR(x)  #x
 #define SHIM_XSTR(x) SHIM_STR(x)
 
+/* clang-format off */
 __asm__(
     ".macro SYSCALLDB\n"
     "leaq .Lafter_syscalldb\\@(%rip), %rcx\n"
@@ -38,6 +41,7 @@ __asm__(
     ".Lafter_syscalldb\\@:\n"
     ".endm\n"
 );
+/* clang-format on */
 
 #undef SHIM_XSTR
 #undef SHIM_STR
@@ -50,10 +54,12 @@ enum {
 
 static inline int shim_call(int number, unsigned long arg1, unsigned long arg2) {
     long (*handle_call)(int number, unsigned long arg1, unsigned long arg2);
+    /* clang-format off */
     __asm__("movq %%gs:%c1, %0"
             : "=r"(handle_call)
             : "i"(SHIM_CALL_OFFSET)
             : "memory");
+    /* clang-format on */
     return handle_call(number, arg1, arg2);
 }
 
@@ -64,7 +70,6 @@ static inline int shim_register_library(const char* name, unsigned long load_add
 static inline int shim_run_test(const char* test_name) {
     return shim_call(SHIM_CALL_RUN_TEST, (unsigned long)test_name, 0);
 }
-
 
 #endif /* __ASSEMBLER__ */
 
